@@ -1,0 +1,21 @@
+# Requisitos para o Sistema de Comunicação Segura com Chaves Dinâmicas e Detecção de Intrusão via ML
+# Instalação: pip install -r requirements.txt
+
+# Criptografia
+cryptography>=40.0.0
+
+# Machine Learning
+scikit-learn>=1.2.0
+pandas>=2.0.0
+numpy>=1.22.0
+joblib>=1.2.0
+
+# Utilitários
+python-dateutil>=2.8.2
+matplotlib>=3.7.0  # Para visualização de resultados (opcional)
+pyreadline3>=3.4.1 ; sys_platform == 'win32'  # Suporte para readline no Windows
+
+# Requisitos para ambiente de desenvolvimento
+pytest>=7.0.0  # Para testes unitários
+
+# Versão mínima do Python recomendada: 3.9 
