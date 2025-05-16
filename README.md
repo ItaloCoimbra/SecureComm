@@ -23,27 +23,37 @@ Develop a real-time encrypted peer-to-peer communication system that:
 ## 📂 Project Structure
 
 ```
-/securecomm/
+/
 ├── core/                     # Core application modules
 │   ├── crypto.py             # ECDH + AES-GCM implementation
 │   ├── auth.py               # Digital Signature implementation (ECDSA)
 │   ├── comm.py               # Secure P2P socket communication logic
-│   └── anomaly.py            # ML model for anomaly detection and its functions
-├── server/                   # Server-specific logic (if needed, currently integrated in comm.py and client.py)
-│   ├── server.py             # (Planned, but functionality may be in client.py/comm.py for pure P2P)
-│   └── session_manager.py    # (Planned, session management integrated in comm.py)
+│   └── anomaly.py            # ML model for anomaly detection and functions
+├── server/                   # Server-specific logic
+│   ├── server.py             # Server implementation with socket handling
+│   └── session_manager.py    # Session management and tracking
 ├── client/                   # Client-specific logic
-│   └── client.py             # CLI client implementation (TO BE DEVELOPED)
+│   └── client.py             # CLI client implementation
 ├── data/                     # Data for training and ML models
-│   ├── training_data.csv     # (Planned for generated training data)
-│   └── anomaly_detector_model.joblib # Trained anomaly detection model
-│   └── anomaly_scaler.joblib   # Scaler for model data
+│   ├── training_data.csv     # Dataset for model training
+│   ├── training_data_generator.py # Script to generate training data
+│   ├── anomaly_detector_model.joblib # Trained anomaly detection model
+│   ├── anomaly_scaler.joblib # Scaler for model data normalization
+│   ├── precision_recall_curve.png # Model evaluation visualization
+│   └── roc_curve.png         # ROC curve visualization for model evaluation
 ├── utils/                    # Utilities
-│   └── logger.py             # Logging module
+│   └── logger.py             # Logging module with rotation capabilities
+├── benchmark/                # Performance testing
+│   ├── performance_test.py   # Benchmarking script
+│   └── results/              # Directory for benchmark results
 ├── logs/                     # Directory for log files
-│   └── secure_comm.log       # Main log file
-├── venv/                     # Python virtual environment
-└── README.md                 # This file
+├── install.bat               # Windows installation script
+├── setup.py                  # Python package setup
+├── requirements.txt          # Project dependencies
+├── README.md                 # Project documentation
+├── LICENSE                   # MIT License
+├── COMO_EXECUTAR.md          # Execution instructions (Portuguese)
+└── todo.md                   # Development roadmap and tasks
 ```
 
 ## ⚙️ Setup and Installation
