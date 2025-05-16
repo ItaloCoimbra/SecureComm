@@ -1,124 +1,124 @@
-# Sistema de Comunicação Segura com Chaves Dinâmicas e Detecção de Intrusão via ML
+# SecureComm: Secure Communication System with Dynamic Keys and ML-based Intrusion Detection
 
-## 🎯 Objetivo Geral
+## 🎯 General Objective
 
-Desenvolver um sistema de comunicação peer-to-peer criptografado em tempo real, que:
+Develop a real-time encrypted peer-to-peer communication system that:
 
-*   Gere chaves dinâmicas para cada sessão com troca baseada em ECDH (Elliptic Curve Diffie-Hellman).
-*   Use Python para implementar tanto o protocolo de comunicação quanto a criptografia.
-*   Tenha uma camada de detecção de intrusão/anomalias com Machine Learning, identificando padrões suspeitos como man-in-the-middle ou replay attack.
+* Generates dynamic keys for each session based on ECDH (Elliptic Curve Diffie-Hellman) exchange.
+* Uses Python to implement both the communication protocol and cryptography.
+* Includes an intrusion/anomaly detection layer with Machine Learning, identifying suspicious patterns such as man-in-the-middle or replay attacks.
 
-## 🧠 Tecnologias e Conceitos Envolvidos
+## 🧠 Technologies and Concepts
 
-*   **Python:** `sockets` para comunicação, `cryptography` para operações criptográficas, `scikit-learn` e `pandas` para Machine Learning.
-*   **Criptografia:**
-    *   Troca de Chaves: Elliptic Curve Diffie-Hellman (ECDH) com curva SECP384R1.
-    *   Criptografia de Sessão: AES-GCM com chaves de 256 bits derivadas via HKDF (SHA256) a partir do segredo ECDH.
-    *   Forward Secrecy: Chaves ECDH efêmeras geradas para cada sessão.
-    *   Integridade e Autenticidade de Mensagens: Assinaturas digitais usando ECDSA com curva SECP384R1 e hash SHA256.
-*   **Comunicação:** Protocolo P2P sobre TCP/IP, com mensagens serializadas em JSON.
-*   **Detecção de Anomalias:** Modelo `IsolationForest` do Scikit-learn para detectar padrões anômalos no tráfego de comunicação. As features iniciais incluem tamanho da mensagem, intervalo entre mensagens e contagem de mensagens em uma janela de tempo.
-*   **Logging:** Logging de eventos importantes com rotação de arquivos, utilizando o módulo `logging` do Python.
+* **Python:** `sockets` for communication, `cryptography` for cryptographic operations, `scikit-learn` and `pandas` for Machine Learning.
+* **Cryptography:**
+    * Key Exchange: Elliptic Curve Diffie-Hellman (ECDH) with SECP384R1 curve.
+    * Session Encryption: AES-GCM with 256-bit keys derived via HKDF (SHA256) from the ECDH secret.
+    * Forward Secrecy: Ephemeral ECDH keys generated for each session.
+    * Message Integrity and Authenticity: Digital signatures using ECDSA with SECP384R1 curve and SHA256 hash.
+* **Communication:** P2P protocol over TCP/IP, with messages serialized in JSON.
+* **Anomaly Detection:** Scikit-learn's `IsolationForest` model to detect anomalous patterns in communication traffic. Initial features include message size, interval between messages, and message count in a time window.
+* **Logging:** Logging of important events with file rotation, using Python's `logging` module.
 
-## 📂 Estrutura do Projeto
+## 📂 Project Structure
 
 ```
 /securecomm/
-├── core/                     # Módulos centrais da aplicação
-│   ├── crypto.py             # Implementação de ECDH + AES-GCM
-│   ├── auth.py               # Implementação de Assinatura Digital (ECDSA)
-│   ├── comm.py               # Lógica de comunicação socket P2P segura
-│   └── anomaly.py            # Modelo ML para detecção de anomalias e suas funções
-├── server/                   # Lógica específica do servidor (se necessário, atualmente integrado no comm.py e client.py)
-│   ├── server.py             # (Previsto, mas funcionalidade pode estar no client.py/comm.py para P2P puro)
-│   └── session_manager.py    # (Previsto, gerenciamento de sessão integrado no comm.py)
-├── client/                   # Lógica específica do cliente
-│   └── client.py             # Implementação do cliente CLI (A SER DESENVOLVIDO)
-├── data/                     # Dados para treinamento e modelos de ML
-│   ├── training_data.csv     # (Previsto para dados de treinamento gerados)
-│   └── anomaly_detector_model.joblib # Modelo de detecção de anomalias treinado
-│   └── anomaly_scaler.joblib   # Scaler para os dados do modelo
-├── utils/                    # Utilitários
-│   └── logger.py             # Módulo de logging
-├── logs/                     # Diretório para arquivos de log
-│   └── secure_comm.log       # Arquivo de log principal
-├── venv/                     # Ambiente virtual Python
-└── README.md                 # Este arquivo
+├── core/                     # Core application modules
+│   ├── crypto.py             # ECDH + AES-GCM implementation
+│   ├── auth.py               # Digital Signature implementation (ECDSA)
+│   ├── comm.py               # Secure P2P socket communication logic
+│   └── anomaly.py            # ML model for anomaly detection and its functions
+├── server/                   # Server-specific logic (if needed, currently integrated in comm.py and client.py)
+│   ├── server.py             # (Planned, but functionality may be in client.py/comm.py for pure P2P)
+│   └── session_manager.py    # (Planned, session management integrated in comm.py)
+├── client/                   # Client-specific logic
+│   └── client.py             # CLI client implementation (TO BE DEVELOPED)
+├── data/                     # Data for training and ML models
+│   ├── training_data.csv     # (Planned for generated training data)
+│   └── anomaly_detector_model.joblib # Trained anomaly detection model
+│   └── anomaly_scaler.joblib   # Scaler for model data
+├── utils/                    # Utilities
+│   └── logger.py             # Logging module
+├── logs/                     # Directory for log files
+│   └── secure_comm.log       # Main log file
+├── venv/                     # Python virtual environment
+└── README.md                 # This file
 ```
 
-## ⚙️ Configuração e Instalação
+## ⚙️ Setup and Installation
 
-1.  **Clone o repositório (se aplicável) ou crie a estrutura de diretórios manualmente.**
+1. **Clone the repository (if applicable) or manually create the directory structure.**
 
-2.  **Crie e ative um ambiente virtual Python:**
-    ```bash
-    cd securecomm
-    python3.11 -m venv venv
-    source venv/bin/activate
-    ```
+2. **Create and activate a Python virtual environment:**
+   ```bash
+   cd securecomm
+   python3.11 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-3.  **Instale as dependências:**
-    ```bash
-    pip install cryptography scikit-learn pandas joblib
-    ```
+3. **Install dependencies:**
+   ```bash
+   pip install cryptography scikit-learn pandas joblib
+   ```
 
-## 🚀 Como Executar
+## 🚀 How to Execute
 
-Atualmente, os módulos `core/crypto.py`, `core/auth.py`, `core/comm.py` e `core/anomaly.py` contêm seções `if __name__ == '__main__':` com exemplos de uso e testes básicos. Para executar esses testes individuais:
+Currently, the modules `core/crypto.py`, `core/auth.py`, `core/comm.py`, and `core/anomaly.py` contain `if __name__ == '__main__':` sections with usage examples and basic tests. To run these individual tests:
 
 ```bash
 python -m core.crypto
 python -m core.auth
-python -m core.comm # Este tentará uma comunicação P2P básica com detecção de anomalia
-python -m core.anomaly # Este testará o treinamento/carregamento do modelo de anomalia
-python -m utils.logger # Este testará o logger
+python -m core.comm # This will attempt basic P2P communication with anomaly detection
+python -m core.anomaly # This will test training/loading the anomaly model
+python -m utils.logger # This will test the logger
 ```
 
-Uma aplicação cliente-servidor completa (`client/client.py` e `server/server.py` ou um peer executável unificado) ainda precisa ser desenvolvida para demonstrar o sistema de forma interativa.
+A complete client-server application (`client/client.py` and `server/server.py` or a unified executable peer script) still needs to be developed to demonstrate the system interactively.
 
-### Executando o Teste de Comunicação (`core/comm.py`)
+### Running the Communication Test (`core/comm.py`)
 
-O `core/comm.py` quando executado diretamente (`python -m core.comm`) tentará:
-1.  Iniciar um "Peer 1" (servidor) na `localhost:12345`.
-2.  Iniciar um "Peer 2" (cliente) que se conectará ao Peer 1.
-3.  Realizar um handshake criptográfico.
-4.  Trocar algumas mensagens de teste.
-5.  Utilizar o `AnomalyDetector` (carregando um modelo de `data/anomaly_detector_model.joblib` ou treinando um dummy se não existir) para verificar as mensagens.
+When executed directly (`python -m core.comm`), `core/comm.py` will attempt to:
+1. Start a "Peer 1" (server) on `localhost:12345`.
+2. Start a "Peer 2" (client) that will connect to Peer 1.
+3. Perform a cryptographic handshake.
+4. Exchange some test messages.
+5. Use the `AnomalyDetector` (loading a model from `data/anomaly_detector_model.joblib` or training a dummy one if it doesn't exist) to verify the messages.
 
-Certifique-se de que o diretório `data/` existe dentro de `securecomm/` para que o modelo de anomalia possa ser salvo/carregado.
+Make sure the `data/` directory exists within `securecomm/` so that the anomaly model can be saved/loaded.
 
-## 🧠 Treinamento do Modelo de Machine Learning (Detecção de Anomalias)
+## 🧠 Machine Learning Model Training (Anomaly Detection)
 
-O módulo `core/anomaly.py` implementa a classe `AnomalyDetector` que usa `IsolationForest`.
+The `core/anomaly.py` module implements the `AnomalyDetector` class which uses `IsolationForest`.
 
-1.  **Geração de Dados:**
-    *   Atualmente, `core/anomaly.py` inclui uma geração de *dados dummy* para fins de teste dentro de seu bloco `if __name__ == '__main__':`. 
-    *   Para um treinamento real, seria necessário um script separado (e.g., `data/training_data_generator.py`) para simular tráfego normal e de ataque, extraindo features como:
-        *   `message_length`: Tamanho da mensagem.
-        *   `time_interval`: Tempo desde a última mensagem do mesmo peer.
-        *   `message_count_window`: Número de mensagens do peer em uma janela de tempo (e.g., últimos 60s).
-        *   Outras features relevantes (e.g., tipo de mensagem, falhas de decriptografia/assinatura).
-    *   Este script geraria um `training_data.csv` no diretório `data/`.
+1. **Data Generation:**
+   * Currently, `core/anomaly.py` includes a generation of *dummy data* for testing purposes within its `if __name__ == '__main__':` block.
+   * For real training, a separate script (e.g., `data/training_data_generator.py`) would be needed to simulate normal and attack traffic, extracting features such as:
+     * `message_length`: Message size.
+     * `time_interval`: Time since the last message from the same peer.
+     * `message_count_window`: Number of messages from the peer in a time window (e.g., last 60s).
+     * Other relevant features (e.g., message type, decryption/signature failures).
+   * This script would generate a `training_data.csv` in the `data/` directory.
 
-2.  **Treinamento do Modelo:**
-    *   Após gerar `training_data.csv`, o modelo pode ser treinado executando uma função de treinamento que utilize `AnomalyDetector.train(dataframe)`.
-    *   O `AnomalyDetector` salvará o modelo treinado como `data/anomaly_detector_model.joblib` e o scaler como `data/anomaly_scaler.joblib`.
-    *   O `core/comm.py` tentará carregar este modelo salvo. Se não encontrar, o `AnomalyDetector` dentro de `comm.py` (no seu `__main__` de teste) treinará um modelo dummy para permitir a execução dos testes de comunicação.
+2. **Model Training:**
+   * After generating `training_data.csv`, the model can be trained by executing a training function that uses `AnomalyDetector.train(dataframe)`.
+   * The `AnomalyDetector` will save the trained model as `data/anomaly_detector_model.joblib` and the scaler as `data/anomaly_scaler.joblib`.
+   * The `core/comm.py` will try to load this saved model. If it doesn't find it, the `AnomalyDetector` inside `comm.py` (in its `__main__` test) will train a dummy model to allow running the communication tests.
 
-## 📝 Resultados Esperados (Conforme TCC)
+## 📝 Expected Results
 
-*   **Alta segurança:** Mesmo se a chave de uma sessão for descoberta, o conteúdo de sessões passadas não é comprometido (Forward Secrecy).
-*   **Capacidade de detectar e alertar sobre padrões estranhos de uso** (ex: tentativas de MITM, tráfego anômalo) através do módulo de Machine Learning.
-*   **Aplicação com potencial** para ser usada em ambientes corporativos ou mensageiros descentralizados.
+* **High security:** Even if a session key is discovered, the content of past sessions is not compromised (Forward Secrecy).
+* **Ability to detect and alert about unusual usage patterns** (e.g., MITM attempts, anomalous traffic) through the Machine Learning module.
+* **Application with potential** to be used in corporate environments or decentralized messengers.
 
-## 🛣️ Próximos Passos (Desenvolvimento)
+## 🛣️ Next Steps (Development)
 
-*   Desenvolvimento completo do `client/client.py` com interface CLI.
-*   Desenvolvimento de um `server/server.py` robusto ou um script de peer executável unificado.
-*   Criação de um script dedicado para geração de dados de treinamento (`data/training_data_generator.py`).
-*   Implementação de um mecanismo de alerta mais explícito no cliente para anomalias detectadas.
-*   Testes de integração completos e benchmarking de desempenho.
-*   Refinamentos e otimizações.
-*   (Opcional) Implementação de logging criptografado (atualmente usa logging padrão para arquivo).
-*   (Opcional) Interface WebSocket e troca de chave pública com QR code.
+* Complete development of `client/client.py` with CLI interface.
+* Development of a robust `server/server.py` or a unified executable peer script.
+* Creation of a dedicated script for training data generation (`data/training_data_generator.py`).
+* Implementation of a more explicit alert mechanism in the client for detected anomalies.
+* Complete integration tests and performance benchmarking.
+* Refinements and optimizations.
+* (Optional) Implementation of encrypted logging (currently uses standard file logging).
+* (Optional) WebSocket interface and public key exchange with QR code.
 
