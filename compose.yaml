@@ -1,0 +1,24 @@
+services:
+  chat:
+    build: .
+    init: true
+    restart: unless-stopped
+    ports:
+      - "443:8443"
+    volumes:
+      - relay-data:/data
+      - "${SECURECOMM_TLS_DIR:?Set an absolute certificate directory}:/tls:ro"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 512m
+    logging:
+      driver: none
+
+volumes:
+  relay-data:

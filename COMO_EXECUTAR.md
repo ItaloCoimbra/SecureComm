@@ -1,154 +1,132 @@
-# Como Executar o Sistema de Comunicação Segura
+# Executar o SecureComm
 
-Este guia mostra como configurar e executar o servidor e os clientes do sistema de comunicação segura.
+Para o novo website, use o [guia web e Linux](docs/web-deployment.md).
+Os comandos abaixo operam a **CLI histórica** e seu relay de identidades globais;
+não são o backend do website com convites descartáveis.
 
-## Requisitos
+Use inicialmente mensagens sintéticas. A integração é experimental, não auditada para dados sensíveis. Instale Python 3.10+ e execute na raiz do projeto:
 
-- Python 3.8 ou superior
-- Dependências do projeto instaladas (ver `requirements.txt`)
+~~~powershell
+python -m venv .venv
+./.venv/Scripts/python.exe -m pip install .
+~~~
 
-## Preparação do Ambiente
+Os exemplos são PowerShell. No Linux/macOS use .venv/bin/securecomm-client e .venv/bin/securecomm-server. Opções globais do cliente vêm **antes** do subcomando.
 
-1. Ative o ambiente virtual (se estiver usando):
+## 1. Criar identidades e verificar contatos
 
-    ```bash
-    # No Windows
-    venv\Scripts\activate
+~~~powershell
+./.venv/Scripts/securecomm-client.exe --profile alice.vault init
+./.venv/Scripts/securecomm-client.exe --profile bob.vault init
+./.venv/Scripts/securecomm-client.exe --profile alice.vault identity --output alice-public.json
+./.venv/Scripts/securecomm-client.exe --profile bob.vault identity --output bob-public.json
+~~~
 
-    # No Linux/Mac
-    source venv/bin/activate
-    ```
+Cada operação pede a senha do cofre sem eco. Não há argumento de senha nem recuperação se ela for perdida. Arquivos públicos podem ser compartilhados; cofres e chaves TLS não.
 
-2. Antes de usar o sistema pela primeira vez, gere dados de treinamento para o modelo de detecção de anomalias:
+Alice e Bob devem conferir seus fingerprints completos por outro canal confiável, por exemplo pessoalmente. Não basta copiar o fingerprint do mesmo arquivo recebido de uma origem não verificada. Substitua os marcadores abaixo pelos 64 caracteres hexadecimais realmente conferidos:
 
-    ```bash
-    python -m data.training_data_generator
-    ```
+~~~powershell
+./.venv/Scripts/securecomm-client.exe --profile alice.vault add-contact bob bob-public.json --fingerprint FINGERPRINT_COMPLETO_DO_BOB
+./.venv/Scripts/securecomm-client.exe --profile bob.vault add-contact alice alice-public.json --fingerprint FINGERPRINT_COMPLETO_DA_ALICE
+~~~
 
-3. Treine o modelo com os dados gerados:
+## 2. Conversa direta local, sem servidor
 
-    ```bash
-    python train_model.py
-    ```
+Em dois terminais:
 
-## Executando o Servidor
+~~~powershell
+./.venv/Scripts/securecomm-client.exe --profile alice.vault --port 12346 chat
+~~~
 
-O servidor atua como um hub central para coordenar as comunicações entre os clientes.
+~~~powershell
+./.venv/Scripts/securecomm-client.exe --profile bob.vault --port 12347 chat
+~~~
 
-```bash
-# Iniciar o servidor na porta padrão 12345
-python -m server.server
+No terminal de Alice:
 
-# Iniciar o servidor em uma porta específica
-python -m server.server -p 12345
+~~~text
+/conectar bob 127.0.0.1:12347
+/usar bob
+Olá de teste
+~~~
 
-# Iniciar o servidor com um nome personalizado
-python -m server.server -n "MeuServidor"
+Bob pode configurar a rota de resposta:
 
-# Iniciar o servidor em um host específico (interface de rede)
-python -m server.server -H 127.0.0.1
-```
+~~~text
+/conectar alice 127.0.0.1:12346
+/dm alice Resposta de teste
+~~~
 
-Após iniciar o servidor, você verá mensagens indicando que ele está escutando por conexões, mostrando estatísticas a cada minuto.
+O envio direto exige ambos online e conectividade até o listener. Não há NAT traversal/discovery automático. Portas fixas acima são só para o teste local.
 
-## Executando os Clientes
+## 3. Relay local e entrega offline
 
-Você pode executar vários clientes, cada um em uma janela de terminal diferente, para simular a comunicação entre múltiplos usuários.
+Terminal do relay:
 
-```bash
-# Iniciar um cliente na porta padrão (aleatória)
-python -m client.client
+~~~powershell
+./.venv/Scripts/securecomm-server.exe --database relay.sqlite --host 127.0.0.1 --port 12345
+~~~
 
-# Iniciar um cliente em uma porta específica
-python -m client.client -p 12346
+Terminais dos clientes:
 
-# Iniciar um cliente com um nome de usuário personalizado
-python -m client.client -u "Usuario1"
+~~~powershell
+./.venv/Scripts/securecomm-client.exe --profile alice.vault chat --relay 127.0.0.1:12345
+./.venv/Scripts/securecomm-client.exe --profile bob.vault chat --relay 127.0.0.1:12345
+~~~
 
-# Iniciar um cliente em um host específico
-python -m client.client -H 127.0.0.1
-```
+Alice usa /dm bob TEXTO. Antes de receber offline, Bob precisa conectar pelo menos uma vez para publicar prekeys. Depois pode sair; ao retornar, o cliente busca os envelopes e envia receipts cifradas. O relay pode ser reiniciado mantendo o mesmo banco.
 
-## Conectando Clientes ao Servidor
+“Enfileirada” não é confirmação de leitura/entrega. “Entregue” significa confirmação criptográfica de recebimento durável pelo dispositivo, não que uma pessoa leu.
 
-Após iniciar o servidor e os clientes, conecte os clientes ao servidor usando o comando `/conectar`:
+Repita --relay para conectar vários relays. /relay HOST:PORT conecta/reconecta e seleciona a rota de envio; a sincronização consulta os conectados. Uma rota direta configurada para o alias tem prioridade. Não há fallback automático silencioso entre destinatários ou servidores.
 
-```
-/conectar 127.0.0.1:12345
-```
+## 4. Rede externa com TLS
 
-Substitua `127.0.0.1:12345` pelo endereço IP e porta do servidor, se necessário.
+Fora de loopback, TLS é obrigatório. Providencie certificado PEM com hostname/SAN correto, cadeia confiável e chave correspondente; não use o certificado público do exemplo como identidade do contato.
 
-## Comandos do Cliente
+~~~powershell
+./.venv/Scripts/securecomm-server.exe --database relay.sqlite --host 0.0.0.0 --port 12345 --tls-cert relay-cert.pem --tls-key relay-key.pem
+./.venv/Scripts/securecomm-client.exe --profile alice.vault --tls-ca sua-ca.pem chat --relay relay.example.com:12345
+~~~
 
-Depois de conectado, você pode usar vários comandos na interface CLI do cliente:
+Esses nomes/arquivos são marcadores, não serviços configurados. Para certificados de CA pública, o cliente usa as CAs do sistema e pode omitir --tls-ca. Não há opção de desabilitar a verificação TLS.
 
-- `/ajuda` - Mostra a lista de comandos disponíveis
-- `/peers` - Lista os peers conectados localmente
-- `/listar` - Solicita lista de peers conectados ao servidor
-- `/anomalias [N] [todas]` - Solicita lista de anomalias detectadas
-- `/dm índice mensagem` - Envia uma mensagem direta para um peer específico
-- `/nome [novo_nome]` - Exibe ou altera seu nome de usuário
-- `/sair` ou `/quit` - Sai do cliente
+Para escuta direta externa, o próprio cliente também precisa de --tls-cert/--tls-key e --host apropriado. O cliente remetente deve confiar nessa CA e conectar pelo nome presente no certificado. A senha protege o cofre; a chave TLS deve ser protegida separadamente no sistema operacional. Consulte os algoritmos suportados em docs/architecture.md.
 
-## Exemplos de Uso
+## Comandos do chat
 
-### Exemplo 1: Configuração Básica (1 Servidor + 2 Clientes)
+| Comando | Efeito |
+| --- | --- |
+| /usar ALIAS | Seleciona o destinatário de texto sem comando. |
+| /dm ALIAS TEXTO | Envia somente ao contato indicado. |
+| /conectar ALIAS HOST:PORT | Configura rota direta do contato. |
+| /relay HOST:PORT | Conecta/reconecta e seleciona um relay. |
+| /sincronizar | Tenta reenviar pendências e receber mensagens. |
+| /peers | Mostra contatos e fingerprints. |
+| /historico | Exibe histórico local e estados. |
+| /sair | Fecha conexões e cofre. |
 
-Terminal 1 (Servidor):
-```bash
-python -m server.server
-```
+Use aspas para aliases com espaços e [IPv6]:PORT para destinos IPv6. EOF/Ctrl+C também encerram. Não abra dois processos com o mesmo cofre.
 
-Terminal 2 (Cliente 1):
-```bash
-python -m client.client -p 12346 -u "Usuario1"
-```
-Depois conecte ao servidor:
-```
-/conectar 127.0.0.1:12345
-```
+Para administrar confiança, saia do chat primeiro:
 
-Terminal 3 (Cliente 2):
-```bash
-python -m client.client -p 12347 -u "Usuario2"
-```
-Depois conecte ao servidor:
-```
-/conectar 127.0.0.1:12345
-```
+~~~powershell
+./.venv/Scripts/securecomm-client.exe --profile alice.vault contacts
+./.venv/Scripts/securecomm-client.exe --profile alice.vault revoke bob --fingerprint FINGERPRINT_ANTIGO
+./.venv/Scripts/securecomm-client.exe --profile alice.vault replace-contact bob novo-bob-public.json --old-fingerprint FINGERPRINT_ANTIGO --new-fingerprint FINGERPRINT_NOVO_VERIFICADO
+~~~
 
-### Exemplo 2: Testando a Detecção de Anomalias
+Revogação não recolhe mensagens já transmitidas. Um novo dispositivo deve gerar nova identidade. Não copie/restaure cofres para operar simultaneamente ou recuperar um ratchet antigo.
 
-1. Conecte os clientes ao servidor como mostrado acima
-2. De um cliente, envie mensagens anômalas para testar a detecção:
-   - Mensagem muito grande (exfiltração de dados): envie uma mensagem com muitos caracteres repetidos
-   - Sequência de mensagens rápidas (ataque DoS): envie muitas mensagens em sequência rápida
-   - Padrão de mensagem incomum: envie algo como `CMD:exec:powershell -enc UwB0AGEAcgB0AC0AUAByAG8AYwBlAHMAcwAgAGMAYQBsAGMALgBlAHgAZQA=`
+## Erros e limites
 
-3. Verifique as anomalias detectadas:
-```
-/anomalias
-```
+- Cofre/armazenamento indisponível: preserve o arquivo e resolva espaço/permissões; não apague o perfil para “tentar de novo”.
+- Relay desconectado: /relay HOST:PORT restabelece a conexão. Pendências já cifradas permanecem no cofre.
+- Prekeys esgotadas: o perfil retém no máximo 50 privadas ainda não consumidas. Sessões existentes continuam, mas novas iniciações podem ficar indisponíveis. Não há recuperação automática de publicações abandonadas.
+- Fila cheia: pendências não são descartadas; tente sincronizar quando o outro dispositivo/relay puder recebê-las.
+- Senha errada/cofre inválido: abertura falha sem recriar identidade.
 
-## Resolução de Problemas
+Histórico é exibido apenas sob comando local; redirecionar a saída pode criar um arquivo legível fora do cofre. O relay armazena ciphertext e metadados, não texto.
 
-1. **Erro "Endereço em uso"**: Certifique-se de que a porta escolhida não está sendo usada por outro processo.
-   ```bash
-   python -m server.server -p 12346  # Tente uma porta diferente
-   ```
-
-2. **Erro "Não foi possível se conectar"**: Verifique se o servidor está rodando e se o endereço está correto.
-   - Use `127.0.0.1` em vez de `0.0.0.0` ao se conectar
-   - Verifique se está usando a porta correta
-
-3. **"Modelo de detecção de anomalias não encontrado"**: Execute o treinamento do modelo:
-   ```bash
-   python -m data.training_data_generator
-   python train_model.py
-   ```
-
-4. **Problemas no Windows com readline**: Instale a biblioteca pyreadline3:
-   ```bash
-   pip install pyreadline3
-   ``` 
+Para testes e experimentos opcionais de ML, consulte [desenvolvimento](docs/development.md). Não execute o chat legado como alternativa “compatível”.

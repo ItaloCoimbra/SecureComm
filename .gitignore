@@ -54,6 +54,7 @@ profile_default/
 ipython_config.py
 
 # Environments
+.venv/
 venv/
 env/
 ENV/
@@ -70,4 +71,24 @@ logs/
 
 # Local configuration
 .env
-.local 
+.local
+
+# Local profiles, mailbox databases, and TLS material
+*.vault
+*.vault.lock
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Local source indexes and web tooling/build artifacts
+.codegraph/
+node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+server/web_static/
+.runtime/

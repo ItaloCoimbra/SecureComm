@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 import joblib # For saving/loading the model
 import numpy as np
 import os
+from tempfile import TemporaryDirectory
 
 MODEL_FILENAME = "anomaly_detector_model.joblib"
 SCALER_FILENAME = "anomaly_scaler.joblib"
@@ -15,12 +16,16 @@ MODEL_PATH = os.path.join(DATA_DIR, MODEL_FILENAME)
 SCALER_PATH = os.path.join(DATA_DIR, SCALER_FILENAME)
 
 class AnomalyDetector:
-    def __init__(self, contamination="auto"):
+    def __init__(self, contamination="auto", *, model_path=MODEL_PATH, scaler_path=SCALER_PATH):
         """
         Initialize the Anomaly Detector.
         contamination: The proportion of outliers in the data set. 
                        Can be float, or "auto".
+        model_path, scaler_path: Artifact locations used by training and by
+                                 save/load calls without explicit paths.
         """
+        self.model_path = os.fspath(model_path)
+        self.scaler_path = os.fspath(scaler_path)
         self.model = IsolationForest(contamination=contamination, random_state=42)
         self.scaler = StandardScaler()
         self.is_trained = False
@@ -188,13 +193,16 @@ class AnomalyDetector:
             print(f"Error calculating anomaly score: {e}")
             return 0.0
 
-    def save_model(self, model_path=MODEL_PATH, scaler_path=SCALER_PATH):
+    def save_model(self, model_path=None, scaler_path=None):
         """Saves the trained model and scaler to disk."""
         if not self.is_trained:
             print("Model is not trained. Nothing to save.")
             return
         try:
-            os.makedirs(os.path.dirname(model_path), exist_ok=True)
+            model_path = self.model_path if model_path is None else model_path
+            scaler_path = self.scaler_path if scaler_path is None else scaler_path
+            os.makedirs(os.path.dirname(os.path.abspath(model_path)), exist_ok=True)
+            os.makedirs(os.path.dirname(os.path.abspath(scaler_path)), exist_ok=True)
             
             # Salva também a lista de features suportadas
             model_data = {
@@ -209,9 +217,11 @@ class AnomalyDetector:
         except Exception as e:
             print(f"Error saving model: {e}")
 
-    def load_model(self, model_path=MODEL_PATH, scaler_path=SCALER_PATH):
+    def load_model(self, model_path=None, scaler_path=None):
         """Loads a trained model and scaler from disk."""
         try:
+            model_path = self.model_path if model_path is None else model_path
+            scaler_path = self.scaler_path if scaler_path is None else scaler_path
             if not os.path.exists(model_path) or not os.path.exists(scaler_path):
                 print(f"Model or scaler file not found at specified paths.")
                 return False
@@ -240,8 +250,8 @@ class AnomalyDetector:
             self.is_trained = False
             return False
 
-# Example usage (primarily for testing the class structure)
-if __name__ == '__main__':
+def _run_demo(data_dir):
+    """Exercise the detector using artifacts scoped to the demo directory."""
     # This part would typically use a separate script to generate training_data.csv
     # For now, let's create a dummy DataFrame for testing the class methods.
     print("Testing AnomalyDetector class...")
@@ -253,23 +263,24 @@ if __name__ == '__main__':
     #                     message_type_variance, session_duration, sequential_errors
     
     # Gera dados normais
+    rng = np.random.default_rng(42)
     n_samples = 100
     normal_data = np.zeros((n_samples, 12))
     
     # Features básicas
-    normal_data[:,0] = np.random.rand(n_samples) * 1000  # message_length
-    normal_data[:,1] = np.random.normal(loc=1.0, scale=0.5, size=n_samples)  # time_interval
-    normal_data[:,2] = np.random.randint(1, 5, size=n_samples)  # message_count_window
+    normal_data[:,0] = rng.random(n_samples) * 1000  # message_length
+    normal_data[:,1] = rng.normal(loc=1.0, scale=0.5, size=n_samples)  # time_interval
+    normal_data[:,2] = rng.integers(1, 5, size=n_samples)  # message_count_window
     
     # Features avançadas para dados normais
-    normal_data[:,3] = np.random.uniform(3.8, 5.2, size=n_samples)  # payload_entropy
-    normal_data[:,4] = np.random.uniform(0.1, 0.8, size=n_samples)  # response_time
+    normal_data[:,3] = rng.uniform(3.8, 5.2, size=n_samples)  # payload_entropy
+    normal_data[:,4] = rng.uniform(0.1, 0.8, size=n_samples)  # response_time
     normal_data[:,5] = np.zeros(n_samples)  # decryption_errors
     normal_data[:,6] = np.zeros(n_samples)  # signature_errors
     normal_data[:,7] = np.zeros(n_samples)  # replay_flags
     normal_data[:,8] = np.zeros(n_samples)  # handshake_failures
-    normal_data[:,9] = np.random.uniform(0.6, 1.0, size=n_samples)  # message_type_variance
-    normal_data[:,10] = np.random.uniform(30, 1800, size=n_samples)  # session_duration
+    normal_data[:,9] = rng.uniform(0.6, 1.0, size=n_samples)  # message_type_variance
+    normal_data[:,10] = rng.uniform(30, 1800, size=n_samples)  # session_duration
     normal_data[:,11] = np.zeros(n_samples)  # sequential_errors
 
     # Cria DataFrame
@@ -281,7 +292,11 @@ if __name__ == '__main__':
     ]
     training_features = pd.DataFrame(normal_data, columns=columns)
 
-    detector = AnomalyDetector(contamination=0.05) # Expect 5% anomalies in training if it had them
+    detector = AnomalyDetector(
+        contamination=0.05,
+        model_path=os.path.join(data_dir, MODEL_FILENAME),
+        scaler_path=os.path.join(data_dir, SCALER_FILENAME),
+    )
     
     # Test training
     print("\nTraining model with dummy data...")
@@ -340,13 +355,13 @@ if __name__ == '__main__':
 
     # Test saving and loading
     print("\nTesting model saving and loading...")
-    temp_model_path = os.path.join(DATA_DIR, "temp_model.joblib")
-    temp_scaler_path = os.path.join(DATA_DIR, "temp_scaler.joblib")
+    temp_model_path = os.path.join(data_dir, "temp_model.joblib")
+    temp_scaler_path = os.path.join(data_dir, "temp_scaler.joblib")
     detector.save_model(temp_model_path, temp_scaler_path)
     assert os.path.exists(temp_model_path), "Model file not saved."
     assert os.path.exists(temp_scaler_path), "Scaler file not saved."
 
-    new_detector = AnomalyDetector()
+    new_detector = AnomalyDetector(model_path=temp_model_path, scaler_path=temp_scaler_path)
     assert not new_detector.is_trained, "New detector should not be trained initially."
     loaded_successfully = new_detector.load_model(temp_model_path, temp_scaler_path)
     assert loaded_successfully, "Failed to load model."
@@ -358,8 +373,10 @@ if __name__ == '__main__':
     print(f"Prediction with loaded model: {prediction_loaded} (Score: {score_loaded:.4f})")
     assert prediction_loaded == -1, "Anomalous event misclassified by loaded model."
 
-    # Clean up temporary files
-    if os.path.exists(temp_model_path): os.remove(temp_model_path)
-    if os.path.exists(temp_scaler_path): os.remove(temp_scaler_path)
     print("\nAnomalyDetector class basic tests completed.")
+
+
+if __name__ == '__main__':
+    with TemporaryDirectory(prefix="securecomm-anomaly-demo-") as demo_dir:
+        _run_demo(demo_dir)
 

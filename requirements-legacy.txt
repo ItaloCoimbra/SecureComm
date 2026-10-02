@@ -1,0 +1,2 @@
+# Experimentos históricos opcionais; não fazem parte do fluxo E2EE.
+-e .[legacy]

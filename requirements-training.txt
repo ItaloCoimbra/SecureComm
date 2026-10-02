@@ -1,0 +1,2 @@
+# Ferramentas adicionais para train_model.py e geração de dados.
+-e .[training]

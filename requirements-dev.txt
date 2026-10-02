@@ -1,0 +1,2 @@
+# Inclui ferramentas de teste/build e dependências dos testes de ML legado.
+-e .[dev]

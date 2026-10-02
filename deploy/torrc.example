@@ -1,0 +1,5 @@
+# Add to the host's Tor configuration after installing Tor separately.
+# Keep the application listener bound only to loopback. Do not publish port 8765.
+HiddenServiceDir /var/lib/tor/securecomm/
+HiddenServiceVersion 3
+HiddenServicePort 80 127.0.0.1:8765
