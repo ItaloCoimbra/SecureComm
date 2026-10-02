@@ -1,5 +1,9 @@
 # Sistema de Comunicação Segura com Chaves Dinâmicas e Detecção de Intrusão via ML
 
+> Documento histórico do projeto de 2025. Consulte `README.md`,
+> `docs/architecture.md` e `todo.md` para o estado atual. As expectativas abaixo
+> não são garantias de segurança validadas.
+
 ## 🎯 Objetivo Geral
 
 Desenvolver um sistema de comunicação peer-to-peer criptografado em tempo real, que:

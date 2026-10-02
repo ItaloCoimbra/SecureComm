@@ -1,0 +1,5 @@
+include requirements*.txt
+recursive-include server/web_static *.html *.js *.css *.wasm *.txt *.md *.svg
+global-exclude *.joblib *.key *.pyc
+global-exclude *.vault *.vault.lock *.pem *.p12 *.pfx
+global-exclude *.sqlite *.sqlite-wal *.sqlite-shm

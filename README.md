@@ -1,134 +1,70 @@
-# SecureComm: Secure Communication System with Dynamic Keys and ML-based Intrusion Detection
+# SecureComm
 
-## 🎯 General Objective
+## Chat web privado — em implementação
 
-Develop a real-time encrypted peer-to-peer communication system that:
+A direção atual é um website com vínculos independentes por contato, convites
+descartáveis e estado criptográfico somente no navegador, **sem recuperação,
+backup ou sincronização oferecidos pelo serviço**. O servidor web usa filas e
+capacidades aleatórias; não usa as identidades globais do relay CLI histórico.
 
-* Generates dynamic keys for each session based on ECDH (Elliptic Curve Diffie-Hellman) exchange.
-* Uses Python to implement both the communication protocol and cryptography.
-* Includes an intrusion/anomaly detection layer with Machine Learning, identifying suspicious patterns such as man-in-the-middle or replay attacks.
+O escopo e os limites estão no [contrato web](docs/web-private-contract.md).
+O [guia web/Linux](docs/web-deployment.md) descreve build, execução e operação.
+O [registro de validação](docs/web-progress.md) separa trabalho realizado de
+critérios ainda pendentes. Não há deploy nem certificação de anonimato.
 
-## 🧠 Technologies and Concepts
+## CLI histórica (protocolo separado)
 
-* **Python:** `sockets` for communication, `cryptography` for cryptographic operations, `scikit-learn` and `pandas` for Machine Learning.
-* **Cryptography:**
-    * Key Exchange: Elliptic Curve Diffie-Hellman (ECDH) with SECP384R1 curve.
-    * Session Encryption: AES-GCM with 256-bit keys derived via HKDF (SHA256) from the ECDH secret.
-    * Forward Secrecy: Ephemeral ECDH keys generated for each session.
-    * Message Integrity and Authenticity: Digital signatures using ECDSA with SECP384R1 curve and SHA256 hash.
-* **Communication:** P2P protocol over TCP/IP, with messages serialized in JSON.
-* **Anomaly Detection:** Scikit-learn's `IsolationForest` model to detect anomalous patterns in communication traffic. Initial features include message size, interval between messages, and message count in a time window.
-* **Logging:** Logging of important events with file rotation, using Python's `logging` module.
+CLI experimental de mensagens ponta a ponta entre identidades de dispositivo verificadas. O fluxo padrão foi substituído: o relay recebe envelopes cifrados, não o texto nem as chaves privadas das conversas.
 
-## 📂 Project Structure
+Funciona diretamente entre clientes ou com relays independentes para entrega offline. Não há diretório central de identidades nem broadcast de mensagens privadas. Isso **não** é uma rede de federação automática, uma implementação de Signal/Matrix completa ou um produto auditado para uso sensível.
 
-```
-/
-├── core/                     # Core application modules
-│   ├── crypto.py             # ECDH + AES-GCM implementation
-│   ├── auth.py               # Digital Signature implementation (ECDSA)
-│   ├── comm.py               # Secure P2P socket communication logic
-│   └── anomaly.py            # ML model for anomaly detection and functions
-├── server/                   # Server-specific logic
-│   ├── server.py             # Server implementation with socket handling
-│   └── session_manager.py    # Session management and tracking
-├── client/                   # Client-specific logic
-│   └── client.py             # CLI client implementation
-├── data/                     # Data for training and ML models
-│   ├── training_data.csv     # Dataset for model training
-│   ├── training_data_generator.py # Script to generate training data
-│   ├── anomaly_detector_model.joblib # Trained anomaly detection model
-│   ├── anomaly_scaler.joblib # Scaler for model data normalization
-│   ├── precision_recall_curve.png # Model evaluation visualization
-│   └── roc_curve.png         # ROC curve visualization for model evaluation
-├── utils/                    # Utilities
-│   └── logger.py             # Logging module with rotation capabilities
-├── benchmark/                # Performance testing
-│   ├── performance_test.py   # Benchmarking script
-│   └── results/              # Directory for benchmark results
-├── logs/                     # Directory for log files
-├── install.bat               # Windows installation script
-├── setup.py                  # Python package setup
-├── requirements.txt          # Project dependencies
-├── README.md                 # Project documentation
-├── LICENSE                   # MIT License
-├── COMO_EXECUTAR.md          # Execution instructions (Portuguese)
-└── todo.md                   # Development roadmap and tasks
-```
+## Começar
 
-## ⚙️ Setup and Installation
+Python 3.10+; validação local em Windows/Python 3.11.9.
 
-1. **Clone the repository (if applicable) or manually create the directory structure.**
+~~~powershell
+python -m venv .venv
+./.venv/Scripts/python.exe -m pip install .
+./.venv/Scripts/securecomm-client.exe --profile alice.vault init
+~~~
 
-2. **Create and activate a Python virtual environment:**
-   ```bash
-   cd securecomm
-   python3.11 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+No Linux/macOS, use os executáveis correspondentes de .venv/bin. A senha é pedida sem eco no terminal, nunca por argumento.
 
-3. **Install dependencies:**
-   ```bash
-   pip install cryptography scikit-learn pandas joblib
-   ```
+Siga o [guia completo de execução](COMO_EXECUTAR.md) para verificar contatos e abrir uma conversa.
 
-## 🚀 How to Execute
+## Implementado
 
-Currently, the modules `core/crypto.py`, `core/auth.py`, `core/comm.py`, and `core/anomaly.py` contain `if __name__ == '__main__':` sections with usage examples and basic tests. To run these individual tests:
+- Identidade Ed25519/Curve25519 persistente; fingerprint completo confirmado por outro canal.
+- Sessões Olm com vodozemac 0.10.0, evolução de chaves, envelopes autenticados e confirmações cifradas.
+- Cofre local AES-GCM/Scrypt: conta, contatos, sessões, histórico, deduplicação e fila de saída.
+- Gravação atômica, lock de perfil, reenvio do mesmo ciphertext e recuperação após reinício.
+- Relay SQLite opaco com fila offline, expiração, quotas e operações autenticadas.
+- TLS verificado obrigatório fora de loopback, com autenticação vinculada ao certificado do endpoint.
+- Contato/destinatário explícito, revogação e substituição de identidade com confirmação.
 
-```bash
-python -m core.crypto
-python -m core.auth
-python -m core.comm # This will attempt basic P2P communication with anomaly detection
-python -m core.anomaly # This will test training/loading the anomaly model
-python -m utils.logger # This will test the logger
-```
+ML e os experimentos antigos não são importados pela CLI/relay. Seus pacotes são opcionais; arquivos joblib históricos não entram na distribuição.
 
-A complete client-server application (`client/client.py` and `server/server.py` or a unified executable peer script) still needs to be developed to demonstrate the system interactively.
+## Limites importantes
 
-### Running the Communication Test (`core/comm.py`)
+Criptografia não significa “segurança absoluta”. Um relay isoladamente não recebe material para abrir as conversas, mas pode observar metadados, atrasar ou impedir entregas. Cliente comprometido, senha fraca, destinatário que copia mensagens e restauração de cofres antigos não estão cobertos.
 
-When executed directly (`python -m core.comm`), `core/comm.py` will attempt to:
-1. Start a "Peer 1" (server) on `localhost:12345`.
-2. Start a "Peer 2" (client) that will connect to Peer 1.
-3. Perform a cryptographic handshake.
-4. Exchange some test messages.
-5. Use the `AnomalyDetector` (loading a model from `data/anomaly_detector_model.joblib` or training a dummy one if it doesn't exist) to verify the messages.
+Olm deste binding usa MAC de 64 bits e não é pós-quântico. O histórico permanece acessível a quem desbloqueia o cofre. A integração precisa de auditoria especializada antes de dados sensíveis.
 
-Make sure the `data/` directory exists within `securecomm/` so that the anomaly model can be saved/loaded.
+Há limites finitos de cofre, sessões e prekeys, descritos em [arquitetura](docs/architecture.md). Grupos, descoberta automática, federação entre servidores, recuperação de conta e sincronização de vários dispositivos não foram implementados.
 
-## 🧠 Machine Learning Model Training (Anomaly Detection)
+## Documentação e desenvolvimento
 
-The `core/anomaly.py` module implements the `AnomalyDetector` class which uses `IsolationForest`.
+- [Executar e verificar contatos](COMO_EXECUTAR.md)
+- [Arquitetura, garantias condicionais e limites](docs/architecture.md)
+- [Contrato da implementação](docs/implementation-contract.md)
+- [Testes e desenvolvimento](docs/development.md)
+- [Roadmap](todo.md)
 
-1. **Data Generation:**
-   * Currently, `core/anomaly.py` includes a generation of *dummy data* for testing purposes within its `if __name__ == '__main__':` block.
-   * For real training, a separate script (e.g., `data/training_data_generator.py`) would be needed to simulate normal and attack traffic, extracting features such as:
-     * `message_length`: Message size.
-     * `time_interval`: Time since the last message from the same peer.
-     * `message_count_window`: Number of messages from the peer in a time window (e.g., last 60s).
-     * Other relevant features (e.g., message type, decryption/signature failures).
-   * This script would generate a `training_data.csv` in the `data/` directory.
+~~~powershell
+./.venv/Scripts/python.exe -m pip install -r requirements-dev.txt
+./.venv/Scripts/python.exe -m pytest tests -q
+~~~
 
-2. **Model Training:**
-   * After generating `training_data.csv`, the model can be trained by executing a training function that uses `AnomalyDetector.train(dataframe)`.
-   * The `AnomalyDetector` will save the trained model as `data/anomaly_detector_model.joblib` and the scaler as `data/anomaly_scaler.joblib`.
-   * The `core/comm.py` will try to load this saved model. If it doesn't find it, the `AnomalyDetector` inside `comm.py` (in its `__main__` test) will train a dummy model to allow running the communication tests.
+CodeGraph está indexado localmente. [AGENTS.md](AGENTS.md) orienta CodeGraph antes da exploração e JEV nas decisões/revisões úteis. JEV é consultivo, não uma certificação nem autorização automática. Nenhum hook envia código indiscriminadamente.
 
-## 📝 Expected Results
-
-* **High security:** Even if a session key is discovered, the content of past sessions is not compromised (Forward Secrecy).
-* **Ability to detect and alert about unusual usage patterns** (e.g., MITM attempts, anomalous traffic) through the Machine Learning module.
-* **Application with potential** to be used in corporate environments or decentralized messengers.
-
-## 🛣️ Next Steps (Development)
-
-* Complete development of `client/client.py` with CLI interface.
-* Development of a robust `server/server.py` or a unified executable peer script.
-* Creation of a dedicated script for training data generation (`data/training_data_generator.py`).
-* Implementation of a more explicit alert mechanism in the client for detected anomalies.
-* Complete integration tests and performance benchmarking.
-* Refinements and optimizations.
-* (Optional) Implementation of encrypted logging (currently uses standard file logging).
-* (Optional) WebSocket interface and public key exchange with QR code.
-
+O documento do TCC e os módulos core.comm, core.crypto, core.auth e utils.logger são históricos; não descrevem o fluxo atual.
